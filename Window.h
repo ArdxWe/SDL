@@ -13,7 +13,7 @@
 class Window {
 public:
   Window(const std::string &title, int x, int y, int w, int h, uint32_t flags);
-  SDL_Window *get() const;
+  [[nodiscard]] SDL_Window *get() const;
 
 private:
   struct Deleter {

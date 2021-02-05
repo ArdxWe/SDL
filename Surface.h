@@ -8,16 +8,21 @@
 #include <SDL2/SDL.h>
 #include <cstdint>
 #include <memory>
+#include <string>
 
 class Window;
 class Surface {
 public:
-  Surface(const Window &window);
+  Surface(const std::string &path);
   void fill_rect(SDL_Rect *rect, uint32_t color);
-  SDL_PixelFormat *get_format();
+  SDL_PixelFormat *getFormat();
+  SDL_Surface *get();
 
 private:
-  SDL_Surface *surface_;
+  struct Deleter {
+    void operator()(SDL_Surface *p);
+  };
+  std::unique_ptr<SDL_Surface, Deleter> surface_;
 };
 
-#endif //DEMO_SURFACE_H
+#endif // DEMO_SURFACE_H

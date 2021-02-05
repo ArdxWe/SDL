@@ -3,15 +3,22 @@
 //
 
 #include "Surface.h"
-#include "Window.h"
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <stdexcept>
 
-Surface::Surface(const Window &window)
-    : surface_{SDL_GetWindowSurface(window.get())} {}
+using std::runtime_error;
+using namespace std::string_literals;
 
-void Surface::fill_rect(SDL_Rect *rect, uint32_t color) {
-  SDL_FillRect(surface_, rect, color);
+Surface::Surface(const std::string &path) : surface_{IMG_Load(path.c_str())} {
+  if (surface_ == nullptr) {
+    throw runtime_error{"Error calling IMG_Load: "s + IMG_GetError()};
+  }
 }
 
-SDL_PixelFormat *Surface::get_format() { return (surface_)->format; }
+SDL_PixelFormat *Surface::getFormat() { return surface_->format; }
+
+SDL_Surface *Surface::get() { return surface_.get(); }
+
+void Surface::Deleter::operator()(SDL_Surface *p) { SDL_FreeSurface(p); }
