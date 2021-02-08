@@ -4,25 +4,25 @@ project(demo)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(demo
-               main.cpp
-               Window.cpp
-               Window.h
-               App.cpp
-               App.h
-               Surface.cpp
-               Surface.h
-               Renderer.cpp
-               Renderer.h
-               Texture.cpp
-               Texture.h
-               Application.cpp
-               Application.h
-               Image.cpp
-               Image.h
-               Ttf.cpp
-               Ttf.h
-               Font.cpp
-               Font.h)
+               src/main.cpp
+               src/Window.cpp
+               src/Window.h
+               src/App.cpp
+               src/App.h
+               src/Surface.cpp
+               src/Surface.h
+               src/Renderer.cpp
+               src/Renderer.h
+               src/Texture.cpp
+               src/Texture.h
+               src/Application.cpp
+               src/Application.h
+               src/Image.cpp
+               src/Image.h
+               src/Ttf.cpp
+               src/Ttf.h
+               src/Font.cpp
+               src/Font.h)
 
 TARGET_LINK_LIBRARIES(demo
                       pthread
