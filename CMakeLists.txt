@@ -17,9 +17,15 @@ add_executable(demo
                Texture.h
                Application.cpp
                Application.h
-              )
+               Image.cpp
+               Image.h
+               Ttf.cpp
+               Ttf.h
+               Font.cpp
+               Font.h)
 
 TARGET_LINK_LIBRARIES(demo
                       pthread
                       SDL2
+                      SDL2_ttf
                       SDL2_image)

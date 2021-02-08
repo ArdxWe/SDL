@@ -23,10 +23,14 @@ using std::stringstream;
 using std::unique_ptr;
 using std::vector;
 using namespace std::string_literals;
+using Rect = Renderer::Rect;
 
 constexpr double FADE_OUT_TIME = 2;
-constexpr double FADE_IN_TIME = 2;
-constexpr double ON_SHOW_TIME = 4;
+constexpr double FADE_IN_TIME = 1;
+constexpr double ON_SHOW_TIME = 3;
+
+constexpr int WIDTH = 1200;
+constexpr int HEIGHT = 900;
 
 stringstream executeCmd(const string &cmd) {
   auto close = [](FILE *file) { pclose(file); };
@@ -42,6 +46,7 @@ stringstream executeCmd(const string &cmd) {
   }
   return stream;
 }
+
 vector<string> getImagePaths() {
   stringstream stream = executeCmd("find ~/Pictures -name '*.png'"s);
 
@@ -58,8 +63,7 @@ vector<string> getImagePaths() {
 
 Window createWindow() {
   string name{"my demo"};
-  int width = 800, height = 600;
-  Window window{name, 0x1FFF0000, 0x1FFF0000, width, height, SDL_WINDOW_SHOWN};
+  Window window{name, 0x1FFF0000, 0x1FFF0000, WIDTH, HEIGHT, SDL_WINDOW_SHOWN};
   return window;
 }
 
@@ -77,7 +81,28 @@ Application::Application()
   renderer_.setColor(0xFF, 0xFF, 0xFF, 0xFF);
 }
 
+Font creatFont(int size) {
+  stringstream stream = executeCmd("find /usr/share/fonts -name '*.ttf'");
+  string path;
+  getline(stream, path);
+
+  if (path.empty()) {
+    throw runtime_error{"find no fonts."s};
+  }
+
+  return Font(path, size);
+}
 void Application::run() {
+  Font font{creatFont(41)};
+  Surface surface{font, "made by ardxwe", {0, 0x0, 0x0}};
+
+  Rect src{0, 0, surface.getWidth(), surface.getHeight()};
+  Rect dst{WIDTH / 3, HEIGHT / 3, surface.getWidth(), surface.getHeight()};
+  Texture t{createTextureFromSurface(renderer_, surface)};
+  renderer_.clear();
+  renderer_.copyTexture(t, src, dst);
+  renderer_.renderPresent();
+  SDL_Delay(3000);
   bool quit = false;
   SDL_Event e;
   auto start = std::chrono::high_resolution_clock::now();
@@ -86,7 +111,6 @@ void Application::run() {
   double alpha, tm;
   double time_long = FADE_IN_TIME;
   while (!quit) {
-
     while (SDL_PollEvent(&e) != 0) {
       if (e.type == SDL_QUIT) {
         quit = true;
@@ -138,7 +162,9 @@ void Application::run() {
     current_texture_.setBlendMode(SDL_BLENDMODE_BLEND);
     current_texture_.setAlpha(alpha * 255);
     renderer_.clear();
-    renderer_.copyTexture(current_texture_);
+    src = {0, 0, image_.getWidth(), image_.getHeight()};
+    dst = {0, 0, image_.getWidth(), image_.getHeight()};
+    renderer_.copyTexture(current_texture_, src, dst);
     renderer_.renderPresent();
   }
 }

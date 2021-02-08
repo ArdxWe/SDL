@@ -12,11 +12,17 @@ class Window;
 class Texture;
 class Renderer {
 public:
+  struct Rect {
+    int x;
+    int y;
+    int width;
+    int height;
+  };
   explicit Renderer(const Window &window);
   void setColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
   SDL_Renderer *get();
   void clear();
-  void copyTexture(Texture &texture);
+  void copyTexture(Texture &texture, Rect &src, Rect &dst);
   void renderPresent();
 
 private:

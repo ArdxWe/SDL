@@ -22,7 +22,4 @@ App::App() {
   }
 }
 
-App::~App() {
-  SDL_Quit();
-  IMG_Quit();
-}
+App::~App() { SDL_Quit(); }

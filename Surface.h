@@ -5,7 +5,9 @@
 #ifndef DEMO_SURFACE_H
 #define DEMO_SURFACE_H
 
+#include "Font.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -13,10 +15,12 @@
 class Window;
 class Surface {
 public:
-  Surface(const std::string &path);
-  void fill_rect(SDL_Rect *rect, uint32_t color);
+  explicit Surface(const std::string &path);
+  Surface(Font &font, const std::string &text, SDL_Color color);
   SDL_PixelFormat *getFormat();
   SDL_Surface *get();
+  int getWidth();
+  int getHeight();
 
 private:
   struct Deleter {

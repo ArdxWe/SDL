@@ -28,8 +28,10 @@ void Renderer::Deleter::operator()(SDL_Renderer *p) { SDL_DestroyRenderer(p); }
 
 void Renderer::clear() { SDL_RenderClear(renderer_.get()); }
 
-void Renderer::copyTexture(Texture &texture) {
-  SDL_RenderCopy(renderer_.get(), texture.get(), nullptr, nullptr);
+void Renderer::copyTexture(Texture &texture, Rect &src, Rect &dst) {
+  SDL_RenderCopy(renderer_.get(), texture.get(),
+                 reinterpret_cast<SDL_Rect *>(&src),
+                 reinterpret_cast<SDL_Rect *>(&dst));
 }
 
 void Renderer::renderPresent() { SDL_RenderPresent(renderer_.get()); }

@@ -6,9 +6,11 @@
 #define DEMO_APPLICATION_H
 
 #include "App.h"
+#include "Image.h"
 #include "Renderer.h"
 #include "Surface.h"
 #include "Texture.h"
+#include "Ttf.h"
 #include "Window.h"
 #include <SDL2/SDL.h>
 #include <future>
@@ -22,6 +24,8 @@ public:
 
 private:
   App app_{};
+  Image image_app_{};
+  Ttf ttf_app_{};
   std::vector<std::string> paths_;
   Window window_;
   Renderer renderer_;

@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <memory>
 
+class Surface;
 class Texture {
 public:
   Texture() = default;

@@ -3,6 +3,7 @@
 //
 
 #include "Texture.h"
+#include "Surface.h"
 
 #include <SDL2/SDL.h>
 
