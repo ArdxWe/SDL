@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdio>
 #include <future>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -25,7 +26,7 @@ using std::vector;
 using namespace std::string_literals;
 using Rect = Renderer::Rect;
 
-constexpr double FADE_OUT_TIME = 2;
+constexpr double FADE_OUT_TIME = 1;
 constexpr double FADE_IN_TIME = 1;
 constexpr double ON_SHOW_TIME = 3;
 
@@ -63,7 +64,8 @@ vector<string> getImagePaths() {
 
 Window createWindow() {
   string name{"my demo"};
-  Window window{name, 0x1FFF0000, 0x1FFF0000, WIDTH, HEIGHT, SDL_WINDOW_SHOWN};
+  Window window{name,  0x1FFF0000, 0x1FFF0000,
+                WIDTH, HEIGHT,     SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
   return window;
 }
 
@@ -78,7 +80,7 @@ future<Surface> nextImage(const string &path) {
 Application::Application()
     : paths_{getImagePaths()}, window_{createWindow()}, renderer_{window_},
       image_{nextImage(paths_[0]).get()}, next_image_{nextImage(paths_[1])} {
-  renderer_.setColor(0xFF, 0xFF, 0xFF, 0xFF);
+  renderer_.setColor(0, 0, 0, 0xFF);
 }
 
 Font creatFont(int size) {
@@ -92,17 +94,11 @@ Font creatFont(int size) {
 
   return Font(path, size);
 }
-void Application::run() {
-  Font font{creatFont(41)};
-  Surface surface{font, "made by ardxwe", {0, 0x0, 0x0}};
 
-  Rect src{0, 0, surface.getWidth(), surface.getHeight()};
-  Rect dst{WIDTH / 3, HEIGHT / 3, surface.getWidth(), surface.getHeight()};
-  Texture t{createTextureFromSurface(renderer_, surface)};
-  renderer_.clear();
-  renderer_.copyTexture(t, src, dst);
-  renderer_.renderPresent();
-  SDL_Delay(3000);
+void Application::run() {
+  Font small{creatFont(42)};
+  Font big{creatFont(75)};
+
   bool quit = false;
   SDL_Event e;
   auto start = std::chrono::high_resolution_clock::now();
@@ -110,6 +106,7 @@ void Application::run() {
   int size = paths_.size(), i = 0;
   double alpha, tm;
   double time_long = FADE_IN_TIME;
+  Rect src, dst;
   while (!quit) {
     while (SDL_PollEvent(&e) != 0) {
       if (e.type == SDL_QUIT) {
@@ -158,10 +155,39 @@ void Application::run() {
       alpha = 0;
     if (alpha > 1)
       alpha = 1;
+
+    {
+      auto time = std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::now());
+      stringstream stream;
+      stream << std::put_time(std::localtime(&time), " %H:%M:%S");
+
+      Surface surface{small, stream.str(), {0xFF, 0xFF, 0xFF}};
+
+      src = {0, 0, surface.getWidth(), surface.getHeight()};
+      dst = {WIDTH / 8, 6 * HEIGHT / 8, surface.getWidth(),
+             surface.getHeight()};
+      Texture t{createTextureFromSurface(renderer_, surface)};
+      renderer_.clear();
+      renderer_.copyTexture(t, src, dst);
+
+      time = std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::now());
+      stringstream new_stream;
+      new_stream << std::put_time(std::localtime(&time), " %A");
+
+      Surface new_surface{big, new_stream.str(), {0xFF, 0xFF, 0xFF}};
+
+      src = {0, 0, new_surface.getWidth(), new_surface.getHeight()};
+      dst = {WIDTH / 8, 6 * HEIGHT / 8 + surface.getHeight(),
+             new_surface.getWidth(), new_surface.getHeight()};
+      Texture new_t{createTextureFromSurface(renderer_, new_surface)};
+      renderer_.copyTexture(new_t, src, dst);
+    }
+
     current_texture_ = createTextureFromSurface(renderer_, image_);
     current_texture_.setBlendMode(SDL_BLENDMODE_BLEND);
     current_texture_.setAlpha(alpha * 255);
-    renderer_.clear();
     src = {0, 0, image_.getWidth(), image_.getHeight()};
     dst = {0, 0, image_.getWidth(), image_.getHeight()};
     renderer_.copyTexture(current_texture_, src, dst);
