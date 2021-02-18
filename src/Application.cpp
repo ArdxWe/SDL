@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -29,9 +28,6 @@ using Rect = Renderer::Rect;
 constexpr double FADE_OUT_TIME = 1;
 constexpr double FADE_IN_TIME = 1;
 constexpr double ON_SHOW_TIME = 3;
-
-constexpr int WIDTH = 1200;
-constexpr int HEIGHT = 900;
 
 stringstream executeCmd(const string &cmd) {
   auto close = [](FILE *file) { pclose(file); };
@@ -64,8 +60,8 @@ vector<string> getImagePaths() {
 
 Window createWindow() {
   string name{"my demo"};
-  Window window{name,  0x1FFF0000, 0x1FFF0000,
-                WIDTH, HEIGHT,     SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
+  Window window{name, 0x1FFF0000, 0x1FFF0000,
+                0,    0,          SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
   return window;
 }
 
@@ -79,7 +75,8 @@ future<Surface> nextImage(const string &path) {
 
 Application::Application()
     : paths_{getImagePaths()}, window_{createWindow()}, renderer_{window_},
-      image_{nextImage(paths_[0]).get()}, next_image_{nextImage(paths_[1])} {
+      image_{nextImage(paths_[0]).get()},
+      next_image_{nextImage(paths_[1])}, size_{window_.getSize()} {
   renderer_.setColor(0, 0, 0, 0xFF);
 }
 
@@ -87,26 +84,27 @@ Font creatFont(int size) {
   stringstream stream = executeCmd("find /usr/share/fonts -name '*.ttf'");
   string path;
   getline(stream, path);
-
   if (path.empty()) {
     throw runtime_error{"find no fonts."s};
   }
-
   return Font(path, size);
 }
 
 void Application::run() {
-  Font small{creatFont(42)};
-  Font big{creatFont(75)};
+  std::cout << "screen width: " << size_.w << std::endl;
+  std::cout << "screen height: " << size_.h << std::endl;
+
+  Font small{creatFont(72)};
+  Font big{creatFont(96)};
 
   bool quit = false;
   SDL_Event e;
-  auto start = std::chrono::high_resolution_clock::now();
-  auto now = start;
   int size = paths_.size(), i = 0;
   double alpha, tm;
   double time_long = FADE_IN_TIME;
   Rect src, dst;
+  auto start = std::chrono::high_resolution_clock::now();
+  auto now = start;
   while (!quit) {
     while (SDL_PollEvent(&e) != 0) {
       if (e.type == SDL_QUIT) {
@@ -133,13 +131,13 @@ void Application::run() {
                         std::future_status::ready) {
         state_ = State::FADE_IN;
         time_long = FADE_OUT_TIME;
-        start = std::chrono::high_resolution_clock::now();
         i++;
         if (i == size) {
           i = 0;
         }
-        image_ = move(next_image_.get());
+        image_ = next_image_.get();
         next_image_ = nextImage(paths_[i]);
+        start = std::chrono::high_resolution_clock::now();
       }
       break;
     case State::ON_SHOW:
@@ -165,21 +163,19 @@ void Application::run() {
       Surface surface{small, stream.str(), {0xFF, 0xFF, 0xFF}};
 
       src = {0, 0, surface.getWidth(), surface.getHeight()};
-      dst = {WIDTH / 8, 6 * HEIGHT / 8, surface.getWidth(),
+      dst = {size_.w / 8, 6 * size_.h / 8, surface.getWidth(),
              surface.getHeight()};
       Texture t{createTextureFromSurface(renderer_, surface)};
       renderer_.clear();
       renderer_.copyTexture(t, src, dst);
 
-      time = std::chrono::system_clock::to_time_t(
-          std::chrono::system_clock::now());
       stringstream new_stream;
-      new_stream << std::put_time(std::localtime(&time), " %A");
+      new_stream << std::put_time(std::localtime(&time), "%A %F");
 
       Surface new_surface{big, new_stream.str(), {0xFF, 0xFF, 0xFF}};
 
       src = {0, 0, new_surface.getWidth(), new_surface.getHeight()};
-      dst = {WIDTH / 8, 6 * HEIGHT / 8 + surface.getHeight(),
+      dst = {size_.w / 8, 6 * size_.h / 8 + surface.getHeight(),
              new_surface.getWidth(), new_surface.getHeight()};
       Texture new_t{createTextureFromSurface(renderer_, new_surface)};
       renderer_.copyTexture(new_t, src, dst);

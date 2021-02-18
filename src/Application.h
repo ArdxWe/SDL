@@ -36,6 +36,7 @@ private:
   enum class State { FADE_IN, FADE_OUT, ON_SHOW };
 
   State state_ = State::FADE_IN;
+  Window::size size_;
 };
 
 #endif // DEMO_APPLICATION_H
