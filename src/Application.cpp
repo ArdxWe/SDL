@@ -73,13 +73,6 @@ future<Surface> nextImage(const string &path) {
   return async(std::launch::async, [&]() { return Surface{path}; });
 }
 
-Application::Application()
-    : paths_{getImagePaths()}, window_{createWindow()}, renderer_{window_},
-      image_{nextImage(paths_[0]).get()},
-      next_image_{nextImage(paths_[1])}, size_{window_.getSize()} {
-  renderer_.setColor(0, 0, 0, 0xFF);
-}
-
 Font creatFont(int size) {
   stringstream stream = executeCmd("find /usr/share/fonts -name '*.ttf'");
   string path;
@@ -88,6 +81,16 @@ Font creatFont(int size) {
     throw runtime_error{"find no fonts."s};
   }
   return Font(path, size);
+}
+
+Application::Application()
+    : paths_{getImagePaths()}, window_{createWindow()}, renderer_{window_},
+      image_{nextImage(paths_[0]).get()},
+      next_image_{nextImage(paths_[1])}, size_{window_.getSize()} {
+  renderer_.setColor(0, 0, 0, 0xFF);
+  for (auto path : paths_) {
+    std::cout << path << std::endl;
+  }
 }
 
 void Application::run() {
@@ -107,7 +110,7 @@ void Application::run() {
   auto now = start;
   while (!quit) {
     while (SDL_PollEvent(&e) != 0) {
-      if (e.type == SDL_QUIT) {
+      if (e.type == SDL_QUIT || e.type == SDL_MOUSEBUTTONDOWN) {
         quit = true;
       }
     }
@@ -185,7 +188,7 @@ void Application::run() {
     current_texture_.setBlendMode(SDL_BLENDMODE_BLEND);
     current_texture_.setAlpha(alpha * 255);
     src = {0, 0, image_.getWidth(), image_.getHeight()};
-    dst = {0, 0, image_.getWidth(), image_.getHeight()};
+    dst = {0, 0, size_.w, size_.h};
     renderer_.copyTexture(current_texture_, src, dst);
     renderer_.renderPresent();
   }
