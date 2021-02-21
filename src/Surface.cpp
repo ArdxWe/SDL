@@ -21,8 +21,6 @@ Surface::Surface(const std::string &path) : surface_{IMG_Load(path.c_str())} {
 Surface::Surface(Font &font, const std::string &text, SDL_Color color)
     : surface_{TTF_RenderText_Solid(font.get(), text.c_str(), color)} {}
 
-SDL_PixelFormat *Surface::getFormat() { return surface_->format; }
-
 SDL_Surface *Surface::get() { return surface_.get(); }
 
 void Surface::Deleter::operator()(SDL_Surface *p) { SDL_FreeSurface(p); }

@@ -17,7 +17,6 @@ class Surface {
 public:
   explicit Surface(const std::string &path);
   Surface(Font &font, const std::string &text, SDL_Color color);
-  SDL_PixelFormat *getFormat();
   SDL_Surface *get();
   int getWidth();
   int getHeight();
