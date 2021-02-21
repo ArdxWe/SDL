@@ -45,7 +45,7 @@ stringstream executeCmd(const string &cmd) {
 }
 
 vector<string> getImagePaths() {
-  stringstream stream = executeCmd("find ~/Pictures -name '*.png'"s);
+  stringstream stream = executeCmd("find /usr/share/backgrounds/ -name '*.png'"s);
 
   vector<string> res;
   string path;
@@ -61,7 +61,7 @@ vector<string> getImagePaths() {
 Window createWindow() {
   string name{"my demo"};
   Window window{name, 0x1FFF0000, 0x1FFF0000,
-                0,    0,          SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
+                0, 0, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
   return window;
 }
 
@@ -117,40 +117,40 @@ void Application::run() {
     now = std::chrono::high_resolution_clock::now();
     tm = time_long -
          std::chrono::duration_cast<std::chrono::duration<double>>(now - start)
-             .count();
+                 .count();
 
     switch (state_) {
-    case State::FADE_IN:
-      alpha = 1 - tm / time_long;
-      if (tm < 0) {
-        state_ = State::ON_SHOW;
-        time_long = ON_SHOW_TIME;
-        start = std::chrono::high_resolution_clock::now();
-      }
-      break;
-    case State::FADE_OUT:
-      alpha = tm / time_long;
-      if (tm < 0 && next_image_.wait_for((std::chrono::seconds)0) ==
-                        std::future_status::ready) {
-        state_ = State::FADE_IN;
-        time_long = FADE_OUT_TIME;
-        i++;
-        if (i == size) {
-          i = 0;
+      case State::FADE_IN:
+        alpha = 1 - tm / time_long;
+        if (tm < 0) {
+          state_ = State::ON_SHOW;
+          time_long = ON_SHOW_TIME;
+          start = std::chrono::high_resolution_clock::now();
         }
-        image_ = next_image_.get();
-        next_image_ = nextImage(paths_[i]);
-        start = std::chrono::high_resolution_clock::now();
-      }
-      break;
-    case State::ON_SHOW:
-      alpha = 1;
-      if (tm < 0) {
-        state_ = State::FADE_OUT;
-        time_long = FADE_OUT_TIME;
-        start = std::chrono::high_resolution_clock::now();
-      }
-      break;
+        break;
+      case State::FADE_OUT:
+        alpha = tm / time_long;
+        if (tm < 0 && next_image_.wait_for((std::chrono::seconds) 0) ==
+                              std::future_status::ready) {
+          state_ = State::FADE_IN;
+          time_long = FADE_OUT_TIME;
+          i++;
+          if (i == size) {
+            i = 0;
+          }
+          image_ = next_image_.get();
+          next_image_ = nextImage(paths_[i]);
+          start = std::chrono::high_resolution_clock::now();
+        }
+        break;
+      case State::ON_SHOW:
+        alpha = 1;
+        if (tm < 0) {
+          state_ = State::FADE_OUT;
+          time_long = FADE_OUT_TIME;
+          start = std::chrono::high_resolution_clock::now();
+        }
+        break;
     }
     if (alpha < 0)
       alpha = 0;
@@ -159,7 +159,7 @@ void Application::run() {
 
     {
       auto time = std::chrono::system_clock::to_time_t(
-          std::chrono::system_clock::now());
+              std::chrono::system_clock::now());
       stringstream stream;
       stream << std::put_time(std::localtime(&time), " %H:%M:%S");
 
