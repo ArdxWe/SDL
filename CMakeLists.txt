@@ -3,6 +3,8 @@ project(demo)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_compile_options(-Wall -Wfatal-errors -oFast --coverage)
+
 add_executable(demo
                src/main.cpp
                src/Window.cpp
@@ -28,4 +30,5 @@ TARGET_LINK_LIBRARIES(demo
                       pthread
                       SDL2
                       SDL2_ttf
-                      SDL2_image)
+                      SDL2_image
+                      gcov)
