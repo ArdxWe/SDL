@@ -26,7 +26,7 @@ using namespace std::string_literals;
 using Rect = Renderer::Rect;
 
 constexpr double FADE_OUT_TIME = 1;
-constexpr double FADE_IN_TIME = 1;
+constexpr double FADE_IN_TIME = 2;
 constexpr double ON_SHOW_TIME = 3;
 
 stringstream executeCmd(const string &cmd) {
@@ -133,7 +133,7 @@ void Application::run() {
         if (tm < 0 && next_image_.wait_for((std::chrono::seconds) 0) ==
                               std::future_status::ready) {
           state_ = State::FADE_IN;
-          time_long = FADE_OUT_TIME;
+          time_long = FADE_IN_TIME;
           i++;
           if (i == size) {
             i = 0;
