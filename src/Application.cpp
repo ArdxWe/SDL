@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -15,7 +16,10 @@
 #include <vector>
 
 using std::async;
+using std::cout;
+using std::endl;
 using std::future;
+using std::getenv;
 using std::move;
 using std::runtime_error;
 using std::string;
@@ -45,7 +49,13 @@ stringstream executeCmd(const string &cmd) {
 }
 
 vector<string> getImagePaths() {
-  stringstream stream = executeCmd("find ~/Pictures -name '*.png'"s);
+  char *png_path = nullptr;
+
+  if ((png_path = getenv("PNG")) == nullptr) {
+    png_path = "/usr/share/backgrounds";
+  }
+  string cmd = "find "s + png_path + " -name '*.png'"s;
+  stringstream stream = executeCmd(cmd);
 
   vector<string> res;
   string path;
@@ -89,7 +99,7 @@ Application::Application()
       next_image_{nextImage(paths_[1])}, size_{window_.getSize()} {
   renderer_.setColor(0, 0, 0, 0xFF);
   for (auto path : paths_) {
-    std::cout << path << std::endl;
+    cout << path << endl;
   }
 }
 
