@@ -11,7 +11,7 @@
 class Window;
 class Texture;
 class Renderer {
-public:
+  public:
   struct Rect {
     int x;
     int y;
@@ -23,13 +23,14 @@ public:
   SDL_Renderer *get();
   void clear();
   void copyTexture(Texture &texture, Rect &src, Rect &dst);
+  void copyAllTexture(Texture &texture);
   void renderPresent();
 
-private:
+  private:
   struct Deleter {
     void operator()(SDL_Renderer *p);
   };
   std::unique_ptr<SDL_Renderer, Deleter> renderer_;
 };
 
-#endif // DEMO_RENDERER_H
+#endif// DEMO_RENDERER_H

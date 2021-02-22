@@ -11,7 +11,7 @@
 #include <string>
 
 class Window {
-public:
+  public:
   struct size {
     int w;
     int h;
@@ -20,7 +20,7 @@ public:
   [[nodiscard]] SDL_Window *get() const;
   size getSize();
 
-private:
+  private:
   struct Deleter {
     void operator()(SDL_Window *x);
   };
@@ -28,4 +28,4 @@ private:
   size size_;
 };
 
-#endif // DEMO_WINDOW_H
+#endif// DEMO_WINDOW_H

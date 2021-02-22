@@ -14,18 +14,18 @@
 
 class Window;
 class Surface {
-public:
+  public:
   explicit Surface(const std::string &path);
   Surface(Font &font, const std::string &text, SDL_Color color);
   SDL_Surface *get();
   int getWidth();
   int getHeight();
 
-private:
+  private:
   struct Deleter {
     void operator()(SDL_Surface *p);
   };
   std::unique_ptr<SDL_Surface, Deleter> surface_;
 };
 
-#endif // DEMO_SURFACE_H
+#endif// DEMO_SURFACE_H

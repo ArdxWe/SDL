@@ -45,7 +45,7 @@ stringstream executeCmd(const string &cmd) {
 }
 
 vector<string> getImagePaths() {
-  stringstream stream = executeCmd("find /usr/share/backgrounds/ -name '*.png'"s);
+  stringstream stream = executeCmd("find ~/Pictures -name '*.png'"s);
 
   vector<string> res;
   string path;
@@ -154,7 +154,7 @@ void Application::run() {
     }
     if (alpha < 0)
       alpha = 0;
-    if (alpha > 1)
+    else if (alpha > 1)
       alpha = 1;
 
     {
@@ -187,9 +187,7 @@ void Application::run() {
     current_texture_ = createTextureFromSurface(renderer_, image_);
     current_texture_.setBlendMode(SDL_BLENDMODE_BLEND);
     current_texture_.setAlpha(alpha * 255);
-    src = {0, 0, image_.getWidth(), image_.getHeight()};
-    dst = {0, 0, size_.w, size_.h};
-    renderer_.copyTexture(current_texture_, src, dst);
+    renderer_.copyAllTexture(current_texture_);
     renderer_.renderPresent();
   }
 }

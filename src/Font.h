@@ -10,15 +10,15 @@
 #include <string>
 
 class Font {
-public:
+  public:
   Font(const std::string &path, int size);
   TTF_Font *get();
 
-private:
+  private:
   struct Deleter {
     void operator()(TTF_Font *font);
   };
   std::unique_ptr<TTF_Font, Deleter> font_;
 };
 
-#endif // DEMO_FONT_H
+#endif// DEMO_FONT_H

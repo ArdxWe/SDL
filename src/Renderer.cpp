@@ -12,7 +12,7 @@ using std::runtime_error;
 using namespace std::string_literals;
 Renderer::Renderer(const Window &window)
     : renderer_{
-          SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)} {
+              SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)} {
   if (renderer_ == nullptr) {
     throw runtime_error{"Error call SDL_CreateRenderer: "s + SDL_GetError()};
   }
@@ -32,6 +32,10 @@ void Renderer::copyTexture(Texture &texture, Rect &src, Rect &dst) {
   SDL_RenderCopy(renderer_.get(), texture.get(),
                  reinterpret_cast<SDL_Rect *>(&src),
                  reinterpret_cast<SDL_Rect *>(&dst));
+}
+
+void Renderer::copyAllTexture(Texture &texture) {
+  SDL_RenderCopy(renderer_.get(), texture.get(), nullptr, nullptr);
 }
 
 void Renderer::renderPresent() { SDL_RenderPresent(renderer_.get()); }
