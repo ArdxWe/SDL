@@ -49,12 +49,11 @@ stringstream executeCmd(const string &cmd) {
 }
 
 vector<string> getImagePaths() {
-  char *png_path = nullptr;
-
-  if ((png_path = getenv("PNG")) == nullptr) {
-    png_path = "/usr/share/backgrounds";
+  const char *cmd = nullptr;
+  if ((cmd = getenv("PNG_CMD")) == nullptr) {
+    cmd = "find /usr/share/backgrounds -name '*.png'";
   }
-  string cmd = "find "s + png_path + " -name '*.png'"s;
+
   stringstream stream = executeCmd(cmd);
 
   vector<string> res;
