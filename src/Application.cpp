@@ -97,7 +97,7 @@ Application::Application()
       image_{nextImage(paths_[0]).get()},
       next_image_{nextImage(paths_[1])}, size_{window_.getSize()} {
   renderer_.setColor(0, 0, 0, 0xFF);
-  for (auto path : paths_) {
+  for (const auto &path : paths_) {
     cout << path << endl;
   }
 }
