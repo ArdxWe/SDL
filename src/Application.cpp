@@ -54,7 +54,7 @@ vector<string> getImagePaths() {
     cmd = "find /usr/share/backgrounds -name '*.png'";
   }
 
-  stringstream stream = executeCmd(cmd);
+  stringstream stream = executeCmd(string{cmd});
 
   vector<string> res;
   string path;
@@ -79,7 +79,7 @@ Texture createTextureFromSurface(Renderer &renderer, Surface &surface) {
 }
 
 future<Surface> nextImage(const string &path) {
-  return async(std::launch::async, [&]() { return Surface{path}; });
+  return async(std::launch::async, [&path]() { return Surface{path}; });
 }
 
 Font creatFont(int size) {
@@ -89,7 +89,7 @@ Font creatFont(int size) {
   if (path.empty()) {
     throw runtime_error{"find no fonts."s};
   }
-  return Font(path, size);
+  return Font{path, size};
 }
 
 Application::Application()
