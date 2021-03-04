@@ -68,8 +68,7 @@ vector<string> getImagePaths() {
 }
 
 Window createWindow() {
-  string name{"my demo"};
-  Window window{name, 0x1FFF0000, 0x1FFF0000,
+  Window window{string(), 0x1FFF0000, 0x1FFF0000,
                 0, 0, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
   return window;
 }
@@ -112,7 +111,7 @@ void Application::run() {
   bool quit = false;
   SDL_Event e;
   int size = paths_.size(), i = 0;
-  double alpha, tm;
+  double alpha = 0, tm = 0;
   double time_long = FADE_IN_TIME;
   Rect src, dst;
   auto start = std::chrono::high_resolution_clock::now();
