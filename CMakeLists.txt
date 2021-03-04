@@ -3,7 +3,7 @@ project(demo)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_compile_options(-Wall -Wfatal-errors -oFast)
+add_compile_options(-Wall -Wfatal-errors)
 
 add_executable(demo
                src/main.cpp
