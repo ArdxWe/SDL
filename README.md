@@ -1,13 +1,15 @@
 ## introduction
 
-- Look for PNG pictures in `/usr/share/background` and show it in full screen
+- Look for PNGs in dir(default: `/usr/share/background`)
+- Show PNGs in full screen
 - Use font in `/usr/share/fonts` to show times
 - Click the mouse will end the program
 
 
 ## requirements
 
-- More than four PNG pictures in `/usr/share/backgrounds`
+- More than four PNGs(default: `/usr/share/backgrounds`)
+- PNG_CMD environment variable(default: `find /usr/share/backgrounds -name '*.png'`)
 - Have fonts in `/usr/share/fonts`
 ```bash
 $ sudo apt-get install libsdl2-dev
@@ -16,13 +18,16 @@ $ sudo apt install gcovr
 
 ## build
 ```bash
-$ mkdir cmake-build-debug
-$ cmake --build cmake-build-debug --target demo -- -j 12
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_BUILD_TYPE=Release ..
+$ cmake --build . 
 ```
 
 ## run
 
 ```bash
-$ cd cmake-build-debug
+$ cd build
+$ export PNG_CMD="path/to/your/png/dir"
 $ ./demo
 ```
