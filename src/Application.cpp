@@ -4,17 +4,21 @@
 
 #include "Application.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <future>
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+using std::array;
 using std::async;
 using std::cout;
 using std::endl;
@@ -22,18 +26,19 @@ using std::future;
 using std::getenv;
 using std::move;
 using std::runtime_error;
+using std::sort;
 using std::string;
 using std::stringstream;
 using std::unique_ptr;
 using std::vector;
-using namespace std::string_literals;
 using Rect = Renderer::Rect;
+using namespace std::string_literals;
 
-constexpr double FADE_OUT_TIME = 1;
-constexpr double FADE_IN_TIME = 2;
-constexpr double ON_SHOW_TIME = 3;
+constexpr int WINDOW_WIDTH = 960;
+constexpr int WINDOW_HEIGHT = 720;
 
-stringstream executeCmd(const string &cmd) {
+
+static stringstream executeCmd(const string &cmd) {
   auto close = [](FILE *file) { pclose(file); };
   unique_ptr<FILE, decltype(close)> pipe{popen(cmd.c_str(), "r")};
 
@@ -48,40 +53,17 @@ stringstream executeCmd(const string &cmd) {
   return stream;
 }
 
-vector<string> getImagePaths() {
-  const char *cmd = nullptr;
-  if ((cmd = getenv("PNG_CMD")) == nullptr) {
-    cmd = "find /usr/share/backgrounds -name '*.png'";
-  }
-
-  stringstream stream = executeCmd(string{cmd});
-
-  vector<string> res;
-  string path;
-  while (getline(stream, path)) {
-    res.push_back(move(path));
-  }
-  if (res.size() < 4) {
-    throw runtime_error{"less than four pictures."s};
-  }
-  return res;
-}
-
-Window createWindow() {
-  Window window{string(), 0x1FFF0000, 0x1FFF0000,
-                0, 0, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
+static Window createWindow() {
+  Window window{"2048"s, 0x1FFF0000, 0x1FFF0000,
+                WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN};
   return window;
 }
 
-Texture createTextureFromSurface(Renderer &renderer, Surface &surface) {
+static Texture createTextureFromSurface(Renderer &renderer, Surface &surface) {
   return Texture{SDL_CreateTextureFromSurface(renderer.get(), surface.get())};
 }
 
-future<Surface> nextImage(const string &path) {
-  return async(std::launch::async, [&path]() { return Surface{path}; });
-}
-
-Font creatFont(int size) {
+static Font creatFont(int size) {
   stringstream stream = executeCmd("find /usr/share/fonts -name '*.ttf'");
   string path;
   getline(stream, path);
@@ -91,111 +73,272 @@ Font creatFont(int size) {
   return Font{path, size};
 }
 
-Application::Application()
-    : paths_{getImagePaths()}, window_{createWindow()}, renderer_{window_},
-      image_{nextImage(paths_[0]).get()},
-      next_image_{nextImage(paths_[1])}, size_{window_.getSize()} {
-  renderer_.setColor(0, 0, 0, 0xFF);
-  for (const auto &path : paths_) {
-    cout << path << endl;
+static vector<Surface> getResImages() {
+  vector<string> paths;
+
+  stringstream stream = executeCmd("find ../res -name '*.png'"s);
+  string path;
+  while (getline(stream, path)) {
+    paths.push_back(move(path));
+  }
+
+  sort(paths.begin(), paths.end());
+  vector<Surface> res;
+  for (auto &path : paths) {
+    res.push_back(Surface{path});
+  }
+  return res;
+}
+
+static array<array<Rect, 4>, 4> fillLocations(Window::size size) {
+  array<array<Rect, 4>, 4> res;
+
+  int step = size.h / 25;
+  int rect_len = step * 5;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      res[i][j].x = (j + 1) * step + j * rect_len;
+      res[i][j].y = (i + 1) * step + i * rect_len;
+      res[i][j].width = rect_len;
+      res[i][j].height = rect_len;
+    }
+  }
+  return res;
+}
+
+static int log(int x) {
+  if (x == 0) return 0;
+
+  int res = -1;
+  while (x != 0) {
+    x = x >> 1;
+    res++;
+  }
+  return res;
+};
+
+void Application::init() {
+  for (auto &list : locations_) {
+    for (auto &location : list) {
+      Texture t{createTextureFromSurface(renderer_, images_[0])};
+      Rect src = {0, 0, images_[0].getWidth(), images_[0].getHeight()};
+      renderer_.copyTexture(t, src, location);
+    }
   }
 }
 
+Application::Application()
+    : images_{getResImages()},
+      window_{createWindow()},
+      engine_{device_()},
+      renderer_{window_},
+      size_{window_.getSize()},
+      locations_{fillLocations(size_)} {
+}
+
 void Application::run() {
-  std::cout << "screen width: " << size_.w << std::endl;
-  std::cout << "screen height: " << size_.h << std::endl;
-
-  Font small{creatFont(72)};
-  Font big{creatFont(96)};
-
+  init();
+  Font font{creatFont(48)};
+  Font small{creatFont(24)};
   bool quit = false;
   SDL_Event e;
-  int size = paths_.size(), i = 0;
-  double alpha = 0, tm = 0;
-  double time_long = FADE_IN_TIME;
+  const uint8_t *keyStates;
+  string text = "scores: "s;
+  string author = "by ardxwe"s;
   Rect src, dst;
-  auto start = std::chrono::high_resolution_clock::now();
-  auto now = start;
+  Surface over{font, "game over", {0xFF, 0xFF, 0xFF}};
   while (!quit) {
     while (SDL_PollEvent(&e) != 0) {
-      if (e.type == SDL_QUIT || e.type == SDL_MOUSEBUTTONDOWN) {
-        quit = true;
+      switch (e.type) {
+        case SDL_QUIT:
+          quit = true;
+          break;
+        case SDL_KEYDOWN:
+          keyStates = SDL_GetKeyboardState(nullptr);
+          switch (state_) {
+            case State::STOPPING: {
+              int first = getRandom();
+              int second = getRandom();
+              copyTexture(1, first);
+              copyTexture(1, second);
+              state_ = State::RUNNING;
+            } break;
+            case State::RUNNING: {
+              renderer_.clear();
+              bool end = false;
+              for (auto i : map_) {
+                if (i == 0) {
+                  end = false;
+                  break;
+                } else {
+                  end = true;
+                }
+              }
+              if (end) {
+                {
+                  src = {0, 0, over.getWidth(), over.getHeight()};
+                  dst = {size_.h, size_.h * 4 / 5, over.getWidth(),
+                         over.getHeight()};
+                  Texture new_t{createTextureFromSurface(renderer_, over)};
+                  renderer_.copyTexture(new_t, src, dst);
+                }
+                init();
+                state_ = State::STOPPING;
+                for (auto &i : map_) {
+                  i = 0;
+                }
+                scores_ = 0;
+                break;
+              }
+              if (keyStates[SDL_SCANCODE_UP]) {
+                core(keyState::UP);
+                copyTexture(1, getRandom());
+              } else if (keyStates[SDL_SCANCODE_DOWN]) {
+                core(keyState::DOWN);
+                copyTexture(1, getRandom());
+              } else if (keyStates[SDL_SCANCODE_LEFT]) {
+                core(keyState::LEFT);
+                copyTexture(1, getRandom());
+              } else if (keyStates[SDL_SCANCODE_RIGHT]) {
+                core(keyState::RIGHT);
+                copyTexture(1, getRandom());
+              }
+            }
+            default:
+              break;
+          }
       }
     }
-    now = std::chrono::high_resolution_clock::now();
-    tm = time_long -
-         std::chrono::duration_cast<std::chrono::duration<double>>(now - start)
-                 .count();
-
-    switch (state_) {
-      case State::FADE_IN:
-        alpha = 1 - tm / time_long;
-        if (tm < 0) {
-          state_ = State::ON_SHOW;
-          time_long = ON_SHOW_TIME;
-          start = std::chrono::high_resolution_clock::now();
-        }
-        break;
-      case State::FADE_OUT:
-        alpha = tm / time_long;
-        if (tm < 0 && next_image_.wait_for((std::chrono::seconds) 0) ==
-                              std::future_status::ready) {
-          state_ = State::FADE_IN;
-          time_long = FADE_IN_TIME;
-          i++;
-          if (i == size) {
-            i = 0;
-          }
-          image_ = next_image_.get();
-          next_image_ = nextImage(paths_[i]);
-          start = std::chrono::high_resolution_clock::now();
-        }
-        break;
-      case State::ON_SHOW:
-        alpha = 1;
-        if (tm < 0) {
-          state_ = State::FADE_OUT;
-          time_long = FADE_OUT_TIME;
-          start = std::chrono::high_resolution_clock::now();
-        }
-        break;
-    }
-    if (alpha < 0)
-      alpha = 0;
-    else if (alpha > 1)
-      alpha = 1;
 
     {
-      auto time = std::chrono::system_clock::to_time_t(
-              std::chrono::system_clock::now());
-      stringstream stream;
-      stream << std::put_time(std::localtime(&time), " %H:%M:%S");
-
-      Surface surface{small, stream.str(), {0xFF, 0xFF, 0xFF}};
-
+      Surface surface{font, text + std::to_string(scores_), {0xFF, 0xFF, 0xFF}};
       src = {0, 0, surface.getWidth(), surface.getHeight()};
-      dst = {size_.w / 8, 6 * size_.h / 8, surface.getWidth(),
+      dst = {size_.h, size_.h / 2, surface.getWidth(),
              surface.getHeight()};
       Texture t{createTextureFromSurface(renderer_, surface)};
-      renderer_.clear();
       renderer_.copyTexture(t, src, dst);
-
-      stringstream new_stream;
-      new_stream << std::put_time(std::localtime(&time), "%A %F");
-
-      Surface new_surface{big, new_stream.str(), {0xFF, 0xFF, 0xFF}};
-
+      Surface new_surface{small, author, {0x0, 0xFF, 0xFF}};
       src = {0, 0, new_surface.getWidth(), new_surface.getHeight()};
-      dst = {size_.w / 8, 6 * size_.h / 8 + surface.getHeight(),
-             new_surface.getWidth(), new_surface.getHeight()};
+      dst = {size_.w - new_surface.getWidth(), size_.h - new_surface.getHeight(), new_surface.getWidth(),
+             new_surface.getHeight()};
       Texture new_t{createTextureFromSurface(renderer_, new_surface)};
       renderer_.copyTexture(new_t, src, dst);
     }
-
-    current_texture_ = createTextureFromSurface(renderer_, image_);
-    current_texture_.setBlendMode(SDL_BLENDMODE_BLEND);
-    current_texture_.setAlpha(alpha * 255);
-    renderer_.copyAllTexture(current_texture_);
     renderer_.renderPresent();
   }
+}
+
+int Application::getRandom() {
+  int res;
+  do {
+    res = r_(engine_);
+  } while (map_[res]);
+  map_[res] = 2;
+  return res;
+}
+
+void Application::copyTexture(int image_index, int location_index) {
+  Texture t{createTextureFromSurface(renderer_, images_[image_index])};
+  Renderer::Rect src = {0, 0, images_[image_index].getWidth(), images_[image_index].getHeight()};
+  renderer_.copyTexture(t, src, locations_[location_index / 4][location_index % 4]);
+}
+
+void Application::core(keyState state) {
+  vector<int> nums(4);
+  switch (state) {
+    case keyState::UP:
+      for (int j = 0; j < 4; j++) {
+        nums[0] = map_[j];
+        nums[1] = map_[4 + j];
+        nums[2] = map_[8 + j];
+        nums[3] = map_[12 + j];
+        nums = merge(nums);
+
+        for (int i = 0; i < nums.size(); i++) {
+          copyTexture(log(nums[i]), i * 4 + j);
+        }
+        map_[j] = nums[0];
+        map_[4 + j] = nums[1];
+        map_[8 + j] = nums[2];
+        map_[12 + j] = nums[3];
+      }
+      break;
+    case keyState::DOWN:
+      for (int j = 0; j < 4; j++) {
+        nums[0] = map_[12 + j];
+        nums[1] = map_[8 + j];
+        nums[2] = map_[4 + j];
+        nums[3] = map_[j];
+        nums = merge(nums);
+
+        for (int i = 0; i < nums.size(); i++) {
+          copyTexture(log(nums[i]), (3 - i) * 4 + j);
+        }
+        map_[12 + j] = nums[0];
+        map_[8 + j] = nums[1];
+        map_[4 + j] = nums[2];
+        map_[j] = nums[3];
+      }
+      break;
+    case keyState::LEFT:
+      for (int j = 0; j < 4; j++) {
+        nums[0] = map_[4 * j];
+        nums[1] = map_[1 + 4 * j];
+        nums[2] = map_[2 + 4 * j];
+        nums[3] = map_[3 + 4 * j];
+        nums = merge(nums);
+
+        for (int i = 0; i < nums.size(); i++) {
+          copyTexture(log(nums[i]), (i + 4 * j));
+        }
+        map_[4 * j] = nums[0];
+        map_[1 + 4 * j] = nums[1];
+        map_[2 + 4 * j] = nums[2];
+        map_[3 + 4 * j] = nums[3];
+      }
+      break;
+    case keyState::RIGHT:
+      for (int j = 0; j < 4; j++) {
+        nums[0] = map_[3 + 4 * j];
+        nums[1] = map_[2 + 4 * j];
+        nums[2] = map_[1 + 4 * j];
+        nums[3] = map_[4 * j];
+        nums = merge(nums);
+
+        for (int i = 0; i < nums.size(); i++) {
+          copyTexture(log(nums[i]), (3 - i) + 4 * j);
+        }
+        map_[3 + 4 * j] = nums[0];
+        map_[2 + 4 * j] = nums[1];
+        map_[1 + 4 * j] = nums[2];
+        map_[4 * j] = nums[3];
+      }
+      break;
+  }
+}
+
+vector<int> Application::merge(std::vector<int> &nums) {
+  vector<int> res;
+  int count = 0;
+  for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] != 0) {
+      count++;
+      res.push_back(nums[i]);
+    }
+  }
+  for (int i = 0; i < (nums.size() - count); i++) {
+    res.push_back(0);
+  }
+  for (int i = 0; i < res.size() - 1; i++) {
+    if (res[i] != 0 && res[i] == res[i + 1]) {
+      res[i] += res[i];
+      scores_ += res[i];
+      for (int j = i + 1; j < res.size() - 1; j++) {
+        res[j] = res[j + 1];
+      }
+      res[res.size() - 1] = 0;
+      break;
+    }
+  }
+  return res;
 }

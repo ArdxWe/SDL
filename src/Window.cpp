@@ -11,7 +11,6 @@
 Window::Window(const std::string &title, int x, int y, int w, int h,
                uint32_t flags)
     : window_{SDL_CreateWindow(title.c_str(), x, y, w, h, flags)} {
-  SDL_SetWindowFullscreen(window_.get(), SDL_WINDOW_FULLSCREEN_DESKTOP);
   if (window_ == nullptr) {
     using namespace std::string_literals;
     throw std::runtime_error{"error call SDL_CreateWindow"s + SDL_GetError()};
