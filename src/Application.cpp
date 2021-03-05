@@ -19,10 +19,6 @@
 #include <vector>
 
 using std::array;
-using std::async;
-using std::cout;
-using std::endl;
-using std::future;
 using std::getenv;
 using std::move;
 using std::runtime_error;
@@ -40,7 +36,7 @@ constexpr int WINDOW_HEIGHT = 720;
 
 static stringstream executeCmd(const string &cmd) {
   auto close = [](FILE *file) { pclose(file); };
-  unique_ptr<FILE, decltype(close)> pipe{popen(cmd.c_str(), "r")};
+  unique_ptr<FILE, decltype(close)> pipe{popen(cmd.c_str(), "r"), close};
 
   vector<char> buff(0x100);
   size_t n;
@@ -63,7 +59,7 @@ static Texture createTextureFromSurface(Renderer &renderer, Surface &surface) {
   return Texture{SDL_CreateTextureFromSurface(renderer.get(), surface.get())};
 }
 
-static Font creatFont(int size) {
+static Font createFont(int size) {
   stringstream stream = executeCmd("find /usr/share/fonts -name '*.ttf'");
   string path;
   getline(stream, path);
@@ -138,8 +134,8 @@ Application::Application()
 
 void Application::run() {
   init();
-  Font font{creatFont(48)};
-  Font small{creatFont(24)};
+  Font font{createFont(48)};
+  Font small{createFont(24)};
   bool quit = false;
   SDL_Event e;
   const uint8_t *keyStates;
