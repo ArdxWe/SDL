@@ -207,6 +207,8 @@ void Application::run() {
               } else if (keyStates[SDL_SCANCODE_RIGHT]) {
                 core(keyState::RIGHT);
                 copyTexture(1, getRandom());
+              } else {
+                core(keyState::OTHER);
               }
             }
             default:
@@ -322,6 +324,10 @@ void Application::core(keyState state) {
         map_[4 * j] = nums[3];
       }
       break;
+    case keyState::OTHER:
+      for (int i = 0; i < map_.size(); i++) {
+        copyTexture(log(map_[i]), i);
+      }
   }
 }
 

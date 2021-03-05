@@ -29,6 +29,7 @@ class Application {
     DOWN,
     LEFT,
     RIGHT,
+    OTHER,
   };
   void core(keyState state);
   std::vector<int> merge(std::vector<int> &nums);
