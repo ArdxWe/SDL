@@ -156,15 +156,16 @@ void Application::run() {
         case SDL_KEYDOWN:
           keyStates = SDL_GetKeyboardState(nullptr);
           switch (state_) {
-            case State::STOPPING: {
-              int first = getRandom();
-              int second = getRandom();
-              copyTexture(1, first);
-              copyTexture(1, second);
-              state_ = State::RUNNING;
-            } break;
+            case State::STOPPING:
+              if (keyStates[SDL_SCANCODE_S]) {
+                int first = getRandom();
+                int second = getRandom();
+                copyTexture(1, first);
+                copyTexture(1, second);
+                state_ = State::RUNNING;
+              }
+              break;
             case State::RUNNING: {
-              renderer_.clear();
               bool end = false;
               for (auto i : map_) {
                 if (i == 0) {
@@ -182,14 +183,18 @@ void Application::run() {
                   Texture new_t{createTextureFromSurface(renderer_, over)};
                   renderer_.copyTexture(new_t, src, dst);
                 }
-                init();
                 state_ = State::STOPPING;
                 for (auto &i : map_) {
                   i = 0;
                 }
                 scores_ = 0;
+                renderer_.renderPresent();
+                SDL_Delay(1000);
+                renderer_.clear();
+                init();
                 break;
               }
+              renderer_.clear();
               if (keyStates[SDL_SCANCODE_UP]) {
                 core(keyState::UP);
                 copyTexture(1, getRandom());
@@ -217,14 +222,17 @@ void Application::run() {
              surface.getHeight()};
       Texture t{createTextureFromSurface(renderer_, surface)};
       renderer_.copyTexture(t, src, dst);
-      Surface new_surface{small, author, {0x0, 0xFF, 0xFF}};
-      src = {0, 0, new_surface.getWidth(), new_surface.getHeight()};
-      dst = {size_.w - new_surface.getWidth(), size_.h - new_surface.getHeight(), new_surface.getWidth(),
-             new_surface.getHeight()};
-      Texture new_t{createTextureFromSurface(renderer_, new_surface)};
-      renderer_.copyTexture(new_t, src, dst);
+    }
+    {
+      Surface surface{small, author, {0x0, 0xFF, 0xFF}};
+      src = {0, 0, surface.getWidth(), surface.getHeight()};
+      dst = {size_.w - surface.getWidth(), size_.h - surface.getHeight(), surface.getWidth(),
+             surface.getHeight()};
+      Texture t{createTextureFromSurface(renderer_, surface)};
+      renderer_.copyTexture(t, src, dst);
     }
     renderer_.renderPresent();
+    SDL_Delay(16);
   }
 }
 
