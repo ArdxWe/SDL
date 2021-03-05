@@ -13,7 +13,6 @@
 #include "Ttf.h"
 #include "Window.h"
 #include <SDL2/SDL.h>
-#include <future>
 #include <random>
 #include <string>
 #include <vector>
