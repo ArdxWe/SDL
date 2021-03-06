@@ -32,7 +32,7 @@ class Application {
   };
   void core(keyState state);
   std::vector<int> merge(std::vector<int> &nums);
-  void init();
+  void updateLocations(Window::size &size, std::array<std::array<Renderer::Rect, 4>, 4> &locations);
 
   private:
   App app_{};
@@ -46,7 +46,7 @@ class Application {
   std::default_random_engine engine_;
   std::uniform_int_distribution<int> r_{0, 4 * 4 - 1};
 
-  std::array<std::array<Renderer::Rect, 4>, 4> locations_;
+  std::array<std::array<Renderer::Rect, 4>, 4> locations_{};
   std::array<int, 16> map_{};
 
   enum class State {

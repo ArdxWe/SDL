@@ -51,7 +51,7 @@ static stringstream executeCmd(const string &cmd) {
 
 static Window createWindow() {
   Window window{"2048"s, 0x1FFF0000, 0x1FFF0000,
-                WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN};
+                WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE};
   return window;
 }
 
@@ -86,20 +86,18 @@ static vector<Surface> getResImages() {
   return res;
 }
 
-static array<array<Rect, 4>, 4> fillLocations(Window::size size) {
-  array<array<Rect, 4>, 4> res;
-
-  int step = size.h / 25;
+void Application::updateLocations(Window::size &size, std::array<std::array<Renderer::Rect, 4>, 4> &locations) {
+  int len = size.h > size.w ? size.w : size.h;
+  int step = len / 25;
   int rect_len = step * 5;
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
-      res[i][j].x = (j + 1) * step + j * rect_len;
-      res[i][j].y = (i + 1) * step + i * rect_len;
-      res[i][j].width = rect_len;
-      res[i][j].height = rect_len;
+      locations[i][j].x = (j + 1) * step + j * rect_len;
+      locations[i][j].y = (i + 1) * step + i * rect_len;
+      locations[i][j].width = rect_len;
+      locations[i][j].height = rect_len;
     }
   }
-  return res;
 }
 
 static int log(int x) {
@@ -113,27 +111,16 @@ static int log(int x) {
   return res;
 };
 
-void Application::init() {
-  for (auto &list : locations_) {
-    for (auto &location : list) {
-      Texture t{createTextureFromSurface(renderer_, images_[0])};
-      Rect src = {0, 0, images_[0].getWidth(), images_[0].getHeight()};
-      renderer_.copyTexture(t, src, location);
-    }
-  }
-}
-
 Application::Application()
     : images_{getResImages()},
       window_{createWindow()},
       renderer_{window_},
       size_{window_.getSize()},
-      engine_{device_()},
-      locations_{fillLocations(size_)} {
+      engine_{device_()} {
+  updateLocations(size_, locations_);
 }
 
 void Application::run() {
-  init();
   Font font{createFont(48)};
   Font small{createFont(24)};
   bool quit = false;
@@ -142,12 +129,21 @@ void Application::run() {
   string text = "scores: "s;
   string author = "by ardxwe"s;
   Rect src, dst;
-  Surface over{font, "game over", {0xFF, 0xFF, 0xFF}};
   while (!quit) {
+    core(keyState::OTHER);
     while (SDL_PollEvent(&e) != 0) {
       switch (e.type) {
         case SDL_QUIT:
           quit = true;
+          break;
+        case SDL_WINDOWEVENT:
+          if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+            size_.h = e.window.data2;
+            size_.w = e.window.data1;
+            std::cout << size_.h << std::endl;
+            std::cout << size_.w << std::endl;
+            updateLocations(size_, locations_);
+          }
           break;
         case SDL_KEYDOWN:
           keyStates = SDL_GetKeyboardState(nullptr);
@@ -173,8 +169,11 @@ void Application::run() {
               }
               if (end) {
                 {
+                  Surface over{font, "game over and your scores: "s + std::to_string(scores_), {0xFF, 0xFF, 0xFF}};
+                  renderer_.clear();
+
                   src = {0, 0, over.getWidth(), over.getHeight()};
-                  dst = {size_.h, size_.h * 4 / 5, over.getWidth(),
+                  dst = {(size_.w - over.getWidth()) / 2, (size_.h - over.getHeight()) / 2, over.getWidth(),
                          over.getHeight()};
                   Texture new_t{createTextureFromSurface(renderer_, over)};
                   renderer_.copyTexture(new_t, src, dst);
@@ -187,7 +186,6 @@ void Application::run() {
                 renderer_.renderPresent();
                 SDL_Delay(1000);
                 renderer_.clear();
-                init();
                 break;
               }
               renderer_.clear();
@@ -216,8 +214,13 @@ void Application::run() {
     {
       Surface surface{font, text + std::to_string(scores_), {0xFF, 0xFF, 0xFF}};
       src = {0, 0, surface.getWidth(), surface.getHeight()};
-      dst = {size_.h, size_.h / 2, surface.getWidth(),
-             surface.getHeight()};
+      if (size_.h > size_.w) {
+        dst = {(size_.w - surface.getWidth()) / 2, size_.w + (size_.h - size_.w - surface.getHeight()) / 2, surface.getWidth(),
+               surface.getHeight()};
+      } else {
+        dst = {size_.h + (size_.w - size_.h - surface.getWidth()) / 2, (size_.h - surface.getHeight()) / 2, surface.getWidth(),
+               surface.getHeight()};
+      }
       Texture t{createTextureFromSurface(renderer_, surface)};
       renderer_.copyTexture(t, src, dst);
     }
@@ -230,7 +233,7 @@ void Application::run() {
       renderer_.copyTexture(t, src, dst);
     }
     renderer_.renderPresent();
-    SDL_Delay(16);
+    SDL_Delay(10);
   }
 }
 
