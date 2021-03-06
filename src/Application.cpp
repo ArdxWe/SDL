@@ -126,9 +126,9 @@ void Application::init() {
 Application::Application()
     : images_{getResImages()},
       window_{createWindow()},
-      engine_{device_()},
       renderer_{window_},
       size_{window_.getSize()},
+      engine_{device_()},
       locations_{fillLocations(size_)} {
 }
 
@@ -253,14 +253,14 @@ void Application::core(keyState state) {
   vector<int> nums(4);
   switch (state) {
     case keyState::UP:
-      for (int j = 0; j < 4; j++) {
+      for (size_t j = 0; j < 4; j++) {
         nums[0] = map_[j];
         nums[1] = map_[4 + j];
         nums[2] = map_[8 + j];
         nums[3] = map_[12 + j];
         nums = merge(nums);
 
-        for (int i = 0; i < nums.size(); i++) {
+        for (size_t i = 0; i < nums.size(); i++) {
           copyTexture(log(nums[i]), i * 4 + j);
         }
         map_[j] = nums[0];
@@ -270,14 +270,14 @@ void Application::core(keyState state) {
       }
       break;
     case keyState::DOWN:
-      for (int j = 0; j < 4; j++) {
+      for (size_t j = 0; j < 4; j++) {
         nums[0] = map_[12 + j];
         nums[1] = map_[8 + j];
         nums[2] = map_[4 + j];
         nums[3] = map_[j];
         nums = merge(nums);
 
-        for (int i = 0; i < nums.size(); i++) {
+        for (size_t i = 0; i < nums.size(); i++) {
           copyTexture(log(nums[i]), (3 - i) * 4 + j);
         }
         map_[12 + j] = nums[0];
@@ -287,14 +287,14 @@ void Application::core(keyState state) {
       }
       break;
     case keyState::LEFT:
-      for (int j = 0; j < 4; j++) {
+      for (size_t j = 0; j < 4; j++) {
         nums[0] = map_[4 * j];
         nums[1] = map_[1 + 4 * j];
         nums[2] = map_[2 + 4 * j];
         nums[3] = map_[3 + 4 * j];
         nums = merge(nums);
 
-        for (int i = 0; i < nums.size(); i++) {
+        for (size_t i = 0; i < nums.size(); i++) {
           copyTexture(log(nums[i]), (i + 4 * j));
         }
         map_[4 * j] = nums[0];
@@ -304,14 +304,14 @@ void Application::core(keyState state) {
       }
       break;
     case keyState::RIGHT:
-      for (int j = 0; j < 4; j++) {
+      for (size_t j = 0; j < 4; j++) {
         nums[0] = map_[3 + 4 * j];
         nums[1] = map_[2 + 4 * j];
         nums[2] = map_[1 + 4 * j];
         nums[3] = map_[4 * j];
         nums = merge(nums);
 
-        for (int i = 0; i < nums.size(); i++) {
+        for (size_t i = 0; i < nums.size(); i++) {
           copyTexture(log(nums[i]), (3 - i) + 4 * j);
         }
         map_[3 + 4 * j] = nums[0];
@@ -321,7 +321,7 @@ void Application::core(keyState state) {
       }
       break;
     case keyState::OTHER:
-      for (int i = 0; i < map_.size(); i++) {
+      for (size_t i = 0; i < map_.size(); i++) {
         copyTexture(log(map_[i]), i);
       }
   }
@@ -329,21 +329,21 @@ void Application::core(keyState state) {
 
 vector<int> Application::merge(std::vector<int> &nums) {
   vector<int> res;
-  int count = 0;
-  for (int i = 0; i < nums.size(); i++) {
+  size_t count = 0;
+  for (size_t i = 0; i < nums.size(); i++) {
     if (nums[i] != 0) {
       count++;
       res.push_back(nums[i]);
     }
   }
-  for (int i = 0; i < (nums.size() - count); i++) {
+  for (size_t i = 0; i < (nums.size() - count); i++) {
     res.push_back(0);
   }
-  for (int i = 0; i < res.size() - 1; i++) {
+  for (size_t i = 0; i < res.size() - 1; i++) {
     if (res[i] != 0 && res[i] == res[i + 1]) {
       res[i] += res[i];
       scores_ += res[i];
-      for (int j = i + 1; j < res.size() - 1; j++) {
+      for (size_t j = i + 1; j < res.size() - 1; j++) {
         res[j] = res[j + 1];
       }
       res[res.size() - 1] = 0;
