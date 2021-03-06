@@ -170,7 +170,6 @@ void Application::run() {
               if (end) {
                 {
                   Surface over{font, "game over and your scores: "s + std::to_string(scores_), {0xFF, 0xFF, 0xFF}};
-                  renderer_.clear();
 
                   src = {0, 0, over.getWidth(), over.getHeight()};
                   dst = {(size_.w - over.getWidth()) / 2, (size_.h - over.getHeight()) / 2, over.getWidth(),
@@ -185,10 +184,8 @@ void Application::run() {
                 scores_ = 0;
                 renderer_.renderPresent();
                 SDL_Delay(1000);
-                renderer_.clear();
                 break;
               }
-              renderer_.clear();
               if (keyStates[SDL_SCANCODE_UP]) {
                 core(keyState::UP);
                 copyTexture(1, getRandom());
@@ -253,6 +250,7 @@ void Application::copyTexture(int image_index, int location_index) {
 }
 
 void Application::core(keyState state) {
+  renderer_.clear();
   vector<int> nums(4);
   switch (state) {
     case keyState::UP:
