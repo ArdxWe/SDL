@@ -21,18 +21,6 @@ class Application {
   public:
   Application();
   void run();
-  int getRandom();
-  void copyTexture(int image_index, int location_index);
-  enum class keyState {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    OTHER,
-  };
-  void core(keyState state);
-  std::vector<int> merge(std::vector<int> &nums);
-  void updateLocations(Window::size &size, std::array<std::array<Renderer::Rect, 4>, 4> &locations);
 
   private:
   App app_{};
@@ -55,6 +43,20 @@ class Application {
   };
   State state_ = State::STOPPING;
   uint32_t scores_ = 0;
+
+  private:
+  int getRandom();
+  void copyTexture(int image_index, int location_index);
+  enum class keyState {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    OTHER,
+  };
+  void core(keyState state);
+  std::vector<int> merge(std::vector<int> &nums);
+  void updateLocations(Window::size &size, std::array<std::array<Renderer::Rect, 4>, 4> &locations);
 };
 
 #endif// DEMO_APPLICATION_H
