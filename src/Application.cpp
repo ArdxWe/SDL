@@ -86,20 +86,6 @@ static vector<Surface> getResImages() {
   return res;
 }
 
-void Application::updateLocations(Window::size &size, std::array<std::array<Renderer::Rect, 4>, 4> &locations) {
-  int len = size.h > size.w ? size.w : size.h;
-  int step = len / 25;
-  int rect_len = step * 5;
-  for (int i = 0; i < 4; i++) {
-    for (int j = 0; j < 4; j++) {
-      locations[i][j].x = (j + 1) * step + j * rect_len;
-      locations[i][j].y = (i + 1) * step + i * rect_len;
-      locations[i][j].width = rect_len;
-      locations[i][j].height = rect_len;
-    }
-  }
-}
-
 static int log(int x) {
   if (x == 0) return 0;
 
@@ -111,12 +97,11 @@ static int log(int x) {
   return res;
 };
 
-Application::Application()
-    : images_{getResImages()},
-      window_{createWindow()},
-      renderer_{window_},
-      size_{window_.getSize()},
-      engine_{device_()} {
+Application::Application() : images_{getResImages()},
+                             window_{createWindow()},
+                             renderer_{window_},
+                             size_{window_.getSize()},
+                             engine_{device_()} {
   updateLocations(size_, locations_);
 }
 
@@ -130,6 +115,7 @@ void Application::run() {
   string author = "by ardxwe"s;
   Rect src, dst;
   while (!quit) {
+    renderer_.clear();
     core(keyState::OTHER);
     while (SDL_PollEvent(&e) != 0) {
       switch (e.type) {
@@ -250,7 +236,6 @@ void Application::copyTexture(int image_index, int location_index) {
 }
 
 void Application::core(keyState state) {
-  renderer_.clear();
   vector<int> nums(4);
   switch (state) {
     case keyState::UP:
@@ -352,4 +337,18 @@ vector<int> Application::merge(std::vector<int> &nums) {
     }
   }
   return res;
+}
+
+void Application::updateLocations(Window::size &size, std::array<std::array<Renderer::Rect, 4>, 4> &locations) {
+  int len = size.h > size.w ? size.w : size.h;
+  int step = len / 25;
+  int rect_len = step * 5;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      locations[i][j].x = (j + 1) * step + j * rect_len;
+      locations[i][j].y = (i + 1) * step + i * rect_len;
+      locations[i][j].width = rect_len;
+      locations[i][j].height = rect_len;
+    }
+  }
 }
